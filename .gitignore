@@ -1,0 +1,25 @@
+# Dependencies and local secrets
+**/node_modules/
+**/.env
+**/.env.*
+!**/.env.example
+
+# Runtime photo storage (including the legacy project-local default)
+/wedding-photo-app/storage/
+/wedding-photo-app/uploads/*
+!/wedding-photo-app/uploads/.gitkeep
+/wedding-photo-app/thumbnails/*
+!/wedding-photo-app/thumbnails/.gitkeep
+/wedding-photo-app/*.db
+/wedding-photo-app/*.db-wal
+/wedding-photo-app/*.db-shm
+/wedding-photo-app/*.sqlite
+/wedding-photo-app/*.sqlite-wal
+/wedding-photo-app/*.sqlite-shm
+
+# Local backups, logs and coverage
+/wedding-photo-app/backup-storage/
+/wedding-photo-app/backups/
+**/npm-debug.log*
+**/*.log
+/wedding-photo-app/coverage/

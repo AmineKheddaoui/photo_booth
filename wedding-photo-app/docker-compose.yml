@@ -1,0 +1,43 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATA_DIR: /app/storage
+      ADMIN_USER: "${ADMIN_USER:-admin}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:?Définissez ADMIN_PASSWORD dans .env avec un secret généré de 16 caractères minimum}"
+      PUBLIC_URL: "${PUBLIC_URL:?Définissez PUBLIC_URL dans .env}"
+      EVENT_NAME: "${EVENT_NAME:-}"
+      SLIDESHOW_INTERVAL_MS: "${SLIDESHOW_INTERVAL_MS:-7000}"
+      TRUST_PROXY: "${TRUST_PROXY:-0}"
+    volumes:
+      - wedding_data:/app/storage
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m
+    init: true
+    stop_grace_period: 30s
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 1g
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/healthz', {signal: AbortSignal.timeout(3000)}).then(r => { if (!r.ok) process.exit(1); }).catch(() => process.exit(1));"
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+volumes:
+  wedding_data:

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f5ed">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Gestion de l’album · Album de mariage</title>
+  <link rel="stylesheet" href="/css/tailwind.css">
+  <link rel="stylesheet" href="/css/app.css">
+  <script defer src="/js/common.js"></script>
+  <script defer src="/js/admin.js"></script>
+  <script defer src="/vendor/alpine.min.js"></script>
+</head>
+<body class="admin-page" x-data="adminApp">
+  <a class="skip-link no-print" href="#main">Aller au contenu</a>
+  <header class="site-header admin-header no-print"><a href="/" class="brand"><span class="brand-mark" aria-hidden="true">♡</span><span>L’album des invités</span></a><nav class="header-links" aria-label="Navigation"><a href="/" target="_blank" rel="noopener">Page invités <span class="sr-only">(nouvel onglet)</span><span aria-hidden="true">↗</span></a><a href="/slideshow.html" target="_blank" rel="noopener">Diaporama <span class="sr-only">(nouvel onglet)</span><span aria-hidden="true">↗</span></a></nav></header>
+  <main id="main" class="admin-main mx-auto">
+    <section class="admin-intro no-print"><div><p class="eyebrow">Espace organisateurs</p><h1>Les souvenirs, <em>réunis.</em></h1><p class="muted" x-text="eventName">Nos souvenirs de mariage</p></div><a class="button button-primary" href="/api/admin/export.zip"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3v12m-5-5l5 5 5-5M4 15v6h16v-6"/></svg>Télécharger l’album ZIP</a></section>
+    <noscript><div class="alert alert-error">Activez JavaScript pour gérer les photos. Le téléchargement de l’album reste accessible avec le bouton ci-dessus.</div></noscript>
+    <section class="sharing-panel" aria-labelledby="sharing-title">
+      <div class="qr-print-heading"><p class="eyebrow">Un jour, mille souvenirs</p><h1 x-text="eventName">Nos souvenirs de mariage</h1></div>
+      <div class="qr-image-wrap"><img class="qr-image" src="/api/admin/qr.svg" width="240" height="240" alt="QR code vers la page de partage des photos" @error="$el.hidden = true; infoError = 'Le QR code n’a pas pu être chargé. Rechargez la page avant de l’imprimer.'"></div>
+      <div class="sharing-copy"><p class="eyebrow no-print">Faites circuler le bonheur</p><h2 id="sharing-title">Un scan, un souvenir.</h2><p>Scannez ce QR code avec votre téléphone<br class="desktop-break"> et partagez vos photos avec les mariés.</p><p class="public-url" x-text="publicUrl"></p><p class="alert alert-error no-print" role="alert" x-show="infoError" x-text="infoError" x-cloak></p><div class="sharing-actions no-print"><button class="button button-secondary" type="button" @click="printQr()">Imprimer le QR code</button><a class="text-button" href="/api/admin/qr.svg" download="qr-code-mariage.svg">Télécharger le SVG <span aria-hidden="true">↓</span></a></div><p class="small muted no-print">L’archive ZIP inclut tous les originaux encore conservés, même les photos masquées.</p></div>
+      <p class="qr-print-footer">Pas de compte. Pas d’application. Juste vos plus beaux moments.<br>Merci de partager cette belle journée avec nous.</p>
+    </section>
+    <section class="admin-gallery no-print" aria-labelledby="gallery-title" x-cloak>
+      <div class="gallery-toolbar"><div><p class="eyebrow">L’album en direct</p><h2 id="gallery-title" tabindex="-1" x-ref="galleryHeading">Toutes les photos <span class="count-pill" x-text="total">0</span></h2><p class="small muted">Les photos masquées restent dans l’archive, mais pas dans le diaporama.</p></div><div class="refresh-controls"><span class="live-indicator"><span aria-hidden="true"></span>Actualisation automatique</span><p class="small muted" x-show="lastUpdated">Dernière mise à jour : <span x-text="lastUpdated"></span></p><button class="text-button" type="button" @click="loadPhotos()" :disabled="loading">Actualiser maintenant</button></div></div>
+      <div class="alert alert-error" role="alert" x-show="loadError"><p x-text="loadError"></p><button class="text-button" type="button" @click="loadPhotos()" :disabled="loading">Réessayer</button></div>
+      <p class="alert alert-error" role="alert" x-show="actionError" x-text="actionError"></p>
+      <p class="alert alert-success" role="status" x-show="notice" x-text="notice"></p>
+      <p class="loading-line" role="status" x-show="loading"><span class="spinner" aria-hidden="true"></span>Chargement des souvenirs…</p>
+      <div class="empty-state" x-show="!loading && !total && !loadError"><span class="empty-symbol" aria-hidden="true">♡</span><h3>L’histoire commence ici.</h3><p>Les premières photos apparaîtront dès que vos invités les auront envoyées.<br>Partagez le QR code pour les inviter à contribuer.</p></div>
+      <div class="photo-grid" :aria-busy="loading">
+        <template x-for="photo in photos" :key="photo.id">
+          <article class="photo-card" :class="{ 'photo-hidden': photo.is_hidden }">
+            <div class="photo-preview"><img x-show="photo.thumb && !photo.imageFailed" :src="photo.thumb || null" :alt="'Photo partagée par ' + (photo.author || 'un invité')" loading="lazy" width="480" height="360" @error="photo.imageFailed = true"><span class="preview-fallback" x-show="!photo.thumb || photo.imageFailed">Miniature indisponible</span><span class="visibility-badge" :class="photo.is_hidden ? 'badge-hidden' : 'badge-visible'" x-text="photo.is_hidden ? 'Masquée' : 'Visible'"></span></div>
+            <div class="photo-details"><h3 x-text="photo.author || 'Un invité'"></h3><p class="photo-filename" x-text="photo.original_name" :title="photo.original_name"></p><p class="small muted"><time :datetime="photo.created_at" x-text="formatDate(photo.created_at)"></time> · <span x-text="formatBytes(photo.size)"></span></p><div class="photo-actions"><button class="button button-small button-secondary" type="button" @click="toggleVisibility(photo)" :disabled="isBusy(photo)" :aria-label="(photo.is_hidden ? 'Rendre visible ' : 'Masquer ') + photo.original_name" x-text="isBusy(photo) ? 'Mise à jour…' : (photo.is_hidden ? 'Rendre visible' : 'Masquer')"></button><a class="text-button" :href="originalUrl(photo)" download :aria-label="'Télécharger l’original de ' + photo.original_name">Original <span aria-hidden="true">↓</span></a><button class="delete-button" type="button" @click="openDelete(photo, $event)" :disabled="isBusy(photo)" :aria-label="'Supprimer définitivement ' + photo.original_name"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7"/></svg></button></div></div>
+          </article>
+        </template>
+      </div>
+      <nav class="pagination" aria-label="Pagination des photos" x-show="total > 0"><button class="button button-secondary button-small" type="button" @click="goTo(page - 1)" :disabled="page <= 1 || loading">← Précédente</button><p role="status">Page <strong x-text="page">1</strong> sur <strong x-text="pages">1</strong></p><button class="button button-secondary button-small" type="button" @click="goTo(page + 1)" :disabled="page >= pages || loading">Suivante →</button></nav>
+    </section>
+  </main>
+  <dialog class="confirm-dialog no-print" x-ref="deleteDialog" aria-labelledby="delete-title" aria-describedby="delete-description" @cancel="cancelDialog($event)">
+    <p class="eyebrow">Suppression définitive</p><h2 id="delete-title">Supprimer ce souvenir ?</h2><p id="delete-description">La photo, sa miniature et son original seront supprimés. Cette action est irréversible, et la photo sera retirée du diaporama.</p><p class="dialog-filename" x-text="confirmPhoto ? confirmPhoto.original_name : ''"></p><div class="dialog-actions"><button class="button button-secondary" type="button" x-ref="cancelDelete" @click="closeDelete()" :disabled="deleting">Conserver la photo</button><button class="button button-danger" type="button" @click="deletePhoto()" :disabled="deleting" x-text="deleting ? 'Suppression…' : 'Supprimer définitivement'"></button></div>
+  </dialog>
+  <footer class="site-footer no-print"><span aria-hidden="true">✧</span> Chaque photo raconte un peu de votre histoire.</footer>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f5ed">
+  <meta name="description" content="Partagez vos photos de mariage et offrez aux mariés vos plus beaux souvenirs.">
+  <title>Partagez vos souvenirs · Album de mariage</title>
+  <link rel="stylesheet" href="/css/tailwind.css">
+  <link rel="stylesheet" href="/css/app.css">
+  <script defer src="/js/common.js"></script>
+  <script defer src="/js/guest.js"></script>
+  <script defer src="/vendor/alpine.min.js"></script>
+</head>
+<body class="guest-page" x-data="guestApp">
+  <a class="skip-link" href="#main">Aller au contenu</a>
+  <header class="site-header mx-auto">
+    <a href="/" class="brand" aria-label="Accueil de l’album de mariage"><span class="brand-mark" aria-hidden="true">♡</span><span>L’album des invités</span></a>
+    <span class="header-note">Un jour, mille souvenirs</span>
+  </header>
+  <main id="main" class="guest-main mx-auto">
+    <section class="guest-intro text-center" aria-labelledby="welcome-title">
+      <div class="eyebrow"><span aria-hidden="true">✧</span> Le bonheur se partage</div>
+      <p class="event-name" x-text="eventName">Nos souvenirs de mariage</p>
+      <h1 id="welcome-title">Vos regards.<br>Nos plus beaux <em>souvenirs.</em></h1>
+      <p class="intro-copy">Un sourire volé, une danse, un instant de joie…<br class="desktop-break"> Offrez aux mariés les photos que vous avez prises.</p>
+    </section>
+    <noscript><div class="alert alert-error">Activez JavaScript dans votre navigateur pour envoyer vos photos. Aucune application à installer.</div></noscript>
+    <section class="upload-card" aria-labelledby="upload-title" x-cloak>
+      <div class="card-heading"><div><p class="eyebrow">À vous de jouer</p><h2 id="upload-title">Ajoutez vos photos</h2></div><span class="seal" aria-hidden="true">♡</span></div>
+      <div class="quota-panel" aria-live="polite" aria-atomic="true">
+        <div class="quota-heading"><span x-text="loading ? 'Préparation de votre album…' : (remaining === null ? 'Quota indisponible' : remaining + ' photo' + (remaining > 1 ? 's' : '') + ' restante' + (remaining > 1 ? 's' : ''))">Préparation de votre album…</span><span class="muted" x-show="remaining !== null"><span x-text="used">0</span> / <span x-text="quota">50</span></span></div>
+        <progress class="quota-progress" :value="used" :max="quota" aria-label="Photos envoyées sur le quota de cet appareil"></progress>
+        <p class="small muted">Votre quota est associé à ce navigateur. Chaque photo reçue ne compte qu’une fois.</p>
+      </div>
+      <div class="alert alert-error" role="alert" x-show="error"><p x-text="error"></p><button class="text-button" type="button" @click="ready ? refreshQuota() : loadSettings()" :disabled="loading">Réessayer</button></div>
+      <div class="alert alert-soft" x-show="storageUnavailable">Le stockage du navigateur est indisponible. Votre nom et votre identifiant ne seront conservés que pendant cette visite. Gardez cette page ouverte jusqu’à la fin des envois.</div>
+      <div class="field"><label for="author">Votre prénom <span class="optional">facultatif</span></label><input id="author" type="text" autocomplete="given-name" maxlength="80" x-model="author" @input.debounce.300ms="saveAuthor()" @change="saveAuthor()" aria-describedby="author-help"><p id="author-help" class="field-help">Pour signer vos souvenirs. Ce nom pourra apparaître dans le diaporama.</p></div>
+      <div class="upload-actions">
+        <label class="button button-primary file-button" :class="{ 'is-disabled': !ready || loading || checking || remaining === 0 }"><span class="button-icon" aria-hidden="true">＋</span><span>Choisir des photos</span><input class="file-input" type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/tiff,.jpg,.jpeg,.png,.webp,.gif,.avif,.tif,.tiff" @change="selectFiles($event)" :disabled="!ready || loading || checking || remaining === 0" aria-label="Choisir une ou plusieurs photos dans votre galerie" aria-describedby="formats-help"></label>
+        <label class="button button-secondary file-button" :class="{ 'is-disabled': !ready || loading || checking || remaining === 0 }"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 5l1.5-2h5L16 5h4a1 1 0 0 1 1 1v14H3V6a1 1 0 0 1 1-1z"/><circle cx="12" cy="12" r="4"/></svg><span>Prendre une photo</span><input class="file-input" type="file" accept="image/*" capture="environment" @change="selectFiles($event)" :disabled="!ready || loading || checking || remaining === 0" aria-label="Prendre une photo avec la caméra arrière" aria-describedby="formats-help"></label>
+      </div>
+      <p id="formats-help" class="format-help">JPEG, PNG, WEBP, GIF, AVIF ou TIFF · <span x-text="Wedding.bytes(maxBytes)">15 Mo</span> maximum par photo.<br>Les photos HEIC / HEIF doivent être converties en JPEG.</p>
+      <p class="alert alert-soft" x-show="remaining === 0" role="status">Merci pour tous vos souvenirs ! Vous avez atteint le quota de cet appareil. Profitez maintenant de la fête.</p>
+      <p class="small muted" role="status" x-show="checking">Vérification de vos photos…</p>
+      <div class="queue-section" x-show="queue.length" aria-labelledby="queue-title">
+        <div class="section-heading"><h3 id="queue-title">Vos envois</h3><span class="small muted"><span x-text="completed">0</span> reçue(s) <span x-show="pending">· <span x-text="pending">0</span> en cours</span></span></div>
+        <p class="small muted" x-show="processing">Les photos sont envoyées une par une. Gardez cette page ouverte.</p>
+        <ul class="upload-list">
+          <template x-for="item in queue" :key="item.id">
+            <li class="upload-item" :class="{ 'upload-failed': item.status === 'failed', 'upload-success': item.status === 'success' }">
+              <div class="upload-item-top"><span class="file-name" x-text="item.name"></span><span class="status-badge" :class="'status-' + item.status" x-text="statusLabel(item.status)"></span></div>
+              <p class="small muted" x-text="item.size"></p>
+              <progress class="upload-progress" x-show="item.status === 'uploading'" :value="item.progress" max="100" :aria-label="'Progression de l’envoi de ' + item.name"></progress>
+              <p class="upload-message" role="status" x-text="item.message"></p>
+              <div class="item-actions"><button class="text-button" type="button" x-show="item.status === 'failed' && item.retryable" @click="retry(item)" :aria-label="'Réessayer l’envoi de ' + item.name">Réessayer l’envoi</button><button class="text-button muted" type="button" x-show="['failed', 'success', 'queued'].includes(item.status)" @click="remove(item)" :aria-label="'Retirer ' + item.name + ' de la liste des envois'">Retirer de la liste</button></div>
+            </li>
+          </template>
+        </ul>
+      </div>
+      <div class="alert alert-success" role="status" x-show="notice"><span aria-hidden="true">✓</span><p x-text="notice"></p></div>
+    </section>
+    <section class="guest-reassurance" aria-label="Comment ça marche"><div><span class="step-number">01</span><h3>Choisissez</h3><p>Vos moments préférés,<br>pris sur le vif.</p></div><div><span class="step-number">02</span><h3>Partagez</h3><p>Sans compte,<br>sans application.</p></div><div><span class="step-number">03</span><h3>Savourez</h3><p>Les mariés gardent<br>de précieux souvenirs.</p></div></section>
+    <p class="privacy-note">Partagez uniquement des photos que vous êtes autorisé à diffuser, avec l’accord des personnes photographiées. Les organisateurs peuvent masquer ou supprimer une photo.</p>
+  </main>
+  <footer class="site-footer"><span aria-hidden="true">✧</span> Merci d’être une partie de cette belle histoire.</footer>
+</body>
+</html>

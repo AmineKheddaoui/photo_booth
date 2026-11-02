@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#242923">
+  <title>Les souvenirs en direct · Album de mariage</title>
+  <link rel="stylesheet" href="/css/tailwind.css">
+  <link rel="stylesheet" href="/css/app.css">
+  <script defer src="/js/common.js"></script>
+  <script defer src="/js/slideshow.js"></script>
+  <script defer src="/vendor/alpine.min.js"></script>
+</head>
+<body class="slideshow-page" x-data="slideshowApp">
+  <a class="skip-link" href="#slideshow">Aller au diaporama</a>
+  <header class="slideshow-header"><div class="slideshow-brand"><span class="brand-mark" aria-hidden="true">♡</span><div><p class="eyebrow">Nos souvenirs en direct</p><h1 x-text="eventName">Nos souvenirs de mariage</h1></div></div><a class="slideshow-share" href="/">Partagez vos photos <span aria-hidden="true">↗</span></a></header>
+  <main id="slideshow" class="slideshow-stage" aria-label="Diaporama des photos du mariage">
+    <noscript><div class="slideshow-empty"><h2>Activez JavaScript</h2><p>Le diaporama a besoin de JavaScript pour afficher les souvenirs et les actualiser.</p></div></noscript>
+    <div class="slideshow-photo" x-show="current" x-cloak>
+      <img class="slide-image" :src="current ? current.thumb : null" :alt="current ? 'Souvenir partagé par ' + (current.author || 'un invité') : ''" @error="current = null; error = 'La miniature n’est plus disponible. Actualisation en cours.'; refresh()">
+    </div>
+    <div class="slideshow-empty" x-show="!current" x-cloak>
+      <span class="empty-symbol" aria-hidden="true">✧</span>
+      <h2 x-text="loading || imageLoading ? 'Un instant de bonheur arrive…' : (photos.length ? 'Les souvenirs arrivent…' : 'Laissons les souvenirs arriver.')"></h2>
+      <p x-show="!loading && !imageLoading && !photos.length && !error">Les photos de vos invités apparaîtront ici, au fil de la fête.<br>Scannez le QR code partagé par les mariés pour contribuer.</p>
+      <p x-show="loading || imageLoading" role="status">Préparation du diaporama…</p>
+      <p x-show="photos.length && !imageLoading && !loading">Vous pouvez passer à la photo suivante avec la flèche droite.</p>
+    </div>
+    <div class="slideshow-author" x-show="current && current.author" x-cloak><span>Un regard de</span> <strong x-text="current ? current.author : ''"></strong></div>
+  </main>
+  <footer class="slideshow-footer" x-cloak>
+    <div class="slideshow-meta"><span class="live-indicator"><span aria-hidden="true"></span><span x-text="paused ? 'Lecture en pause' : 'Au fil de la fête'"></span></span><span class="slide-counter" x-show="photos.length"><span x-text="position">0</span> / <span x-text="photos.length">0</span></span></div>
+    <div class="slideshow-controls" role="group" aria-label="Commandes du diaporama"><button class="slideshow-control" type="button" @click="advance(-1)" :disabled="!photos.length" aria-label="Photo précédente" title="Photo précédente (flèche gauche)"><span aria-hidden="true">←</span></button><button class="slideshow-control pause-control" type="button" @click="togglePause()" :aria-label="paused ? 'Reprendre le diaporama' : 'Mettre le diaporama en pause'" :aria-pressed="paused" title="Lecture ou pause (barre d’espace)"><span aria-hidden="true" x-text="paused ? '▶' : 'Ⅱ'"></span><span class="control-label" x-text="paused ? 'Reprendre' : 'Pause'"></span></button><button class="slideshow-control" type="button" @click="advance(1)" :disabled="!photos.length" aria-label="Photo suivante" title="Photo suivante (flèche droite)"><span aria-hidden="true">→</span></button><span class="control-divider" aria-hidden="true"></span><button class="slideshow-control" type="button" @click="toggleFullscreen()" :aria-label="fullscreen ? 'Quitter le plein écran' : 'Afficher en plein écran'" :aria-pressed="fullscreen" title="Plein écran (F), quitter (Échap)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg><span class="control-label" x-text="fullscreen ? 'Réduire' : 'Plein écran'"></span></button></div>
+    <p class="keyboard-help">← → Photos · Espace Pause · F Plein écran</p>
+  </footer>
+  <div class="slideshow-notices" role="status" aria-live="polite" x-show="error || fullscreenError" x-cloak><p x-show="error" x-text="error"></p><p x-show="fullscreenError" x-text="fullscreenError"></p><button class="slideshow-control" type="button" @click="refresh(); fullscreenError = ''">Actualiser</button></div>
+</body>
+</html>
